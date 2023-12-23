@@ -4,7 +4,7 @@ import Button from "@/components/Button";
 import ErrorMessage from "@/components/ErrorMessage";
 import LoadingCenter, { LoadingRelative } from "@/components/Loading";
 import MainWrapper from "@/components/MainWrapper";
-import SignInButton from "@/components/SignInButton";
+import SignOutButton from "@/components/SignOutButton";
 import { Status, type Response } from "@/lib/types";
 import { trpc } from "@/trpc/client";
 import { PREVENT_TRPC_FETCH } from "@/utils/trpc";
@@ -49,8 +49,10 @@ function Main(): JSX.Element {
 
   if (sessionStatus === "authenticated" && session) {
     return (
-      <MainWrapper>
+      <MainWrapper className="gap-2">
         <h1 className="text-2xl font-bold">Welcome {session.user.name}</h1>
+        <SignOutButton />
+
         <input
           className="border border-black px-4 py-3"
           placeholder="Enter text"
@@ -71,7 +73,9 @@ function Main(): JSX.Element {
 
   return (
     <MainWrapper>
-      <SignInButton />
+      <Button link={true} href="/api/auth/signin">
+        Sign in
+      </Button>
     </MainWrapper>
   );
 }
