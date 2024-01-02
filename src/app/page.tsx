@@ -5,9 +5,8 @@ import ErrorMessage from "@/components/ErrorMessage";
 import LoadingCenter, { LoadingRelative } from "@/components/Loading";
 import MainWrapper from "@/components/MainWrapper";
 import SignOutButton from "@/components/SignOutButton";
-import { Status, type Response } from "@/lib/types";
+import { Status, type Response } from "@/types/types";
 import { trpc } from "@/trpc/client";
-import { PREVENT_TRPC_FETCH } from "@/utils/trpc";
 import { SessionProvider, useSession } from "next-auth/react";
 import { useState } from "react";
 
@@ -27,10 +26,7 @@ function Main(): JSX.Element {
   const [data, setData] = useState<Response>();
 
   // tRPC Query (fetching data)
-  const { refetch } = trpc.testQuery.useQuery(
-    { text: "Hello" },
-    PREVENT_TRPC_FETCH
-  );
+  const { refetch } = trpc.testQuery.useQuery({ text });
 
   // tRPC Mutation (updating data)
   const { mutate } = trpc.testMutate.useMutation();
@@ -73,9 +69,7 @@ function Main(): JSX.Element {
 
   return (
     <MainWrapper>
-      <Button link={true} href="/api/auth/signin">
-        Sign in
-      </Button>
+      <Button href="/api/auth/signin">Sign in</Button>
     </MainWrapper>
   );
 }

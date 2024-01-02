@@ -1,19 +1,12 @@
-import { Response } from "@/lib/responses";
-import { publicProcedure, router } from "./trpc";
-import { zstring } from "./utils/zod";
-import { z } from "zod";
+import { router } from "./trpc";
+import { authRouter } from "./routers/auth";
+import { testRouter } from "./routers/test";
+import { emailRouter } from "./routers/email";
 
 export const appRouter = router({
-  testQuery: publicProcedure
-    .input(z.object({ text: zstring() }))
-    .query(async ({ input }) => {
-      return { ...Response.Success, result: input.text };
-    }),
-  testMutate: publicProcedure
-    .input(z.object({ text: zstring() }))
-    .mutation(async ({ input }) => {
-      return { ...Response.Success, result: input.text };
-    }),
+  ...authRouter,
+  ...testRouter,
+  ...emailRouter,
 });
 
 export type AppRouter = typeof appRouter;

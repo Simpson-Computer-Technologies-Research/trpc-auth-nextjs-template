@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { User } from "next-auth";
+import { genId } from "./crypto";
 
 export class Prisma extends PrismaClient {
   constructor() {
@@ -148,27 +149,28 @@ export class Prisma extends PrismaClient {
 
   /**
    * Create a new user in the database
-   * @param name The user's name
    * @param email The user's email
    * @param image The user's image
    * @param secret The user's secret
    */
   public static readonly createUser = async (
     id: string,
-    name: string,
     email: string,
+    password: string,
     image: string,
     secret: string
   ): Promise<User> => {
+    const DEFAULT_USER_IMAGE = "/images/default-pfp.png";
+    const generatedPassword = await genId();
+
     return await Prisma.create("user", {
       data: {
         id,
-        name,
-        email,
         secret,
-        image,
-        purchasedEventIds: [],
-        permissions: [0],
+        email,
+        password: password || generatedPassword,
+        image: image || DEFAULT_USER_IMAGE,
+        // permissions: [0],
       },
     });
   };

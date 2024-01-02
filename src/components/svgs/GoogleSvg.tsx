@@ -1,4 +1,4 @@
-import { cn } from "@/utils/cn";
+import { cn } from "@/lib/utils/cn";
 
 export default function GoogleSvg(props: { className?: string }): JSX.Element {
   return (
