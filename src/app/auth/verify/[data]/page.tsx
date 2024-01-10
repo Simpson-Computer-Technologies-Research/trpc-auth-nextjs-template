@@ -27,7 +27,7 @@ export default function SignUpPage() {
   // When the user submits the form, send an api request to create their account
   const [password, setPassword] = useState("");
   const [verificationPassword, setVerificationPassword] = useState("");
-  const [status, setStatus] = useState(AuthStatus.IDLE);
+  const [status, setStatus] = useState(AuthStatus.INVALID_TOKEN);
 
   // tRPC Query creating the user
   const { mutateAsync: createUser } = trpc.createUser.useMutation();
@@ -41,8 +41,6 @@ export default function SignUpPage() {
   const { mutateAsync: verifyToken } = trpc.verifyToken.useMutation(); // TODO: FIX
 
   useEffect(() => {
-    if (PREVENT_TRPC_FETCH) return;
-
     verifyToken({ email, token }).then((res) => {
       res.success
         ? setStatus(AuthStatus.IDLE)
