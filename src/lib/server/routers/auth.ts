@@ -9,7 +9,7 @@ import { genId, sha256 } from "@/lib/crypto";
 export const authRouter = {
   verifyToken: publicProcedure
     .input(z.object({ token: zstring(), email: zstring() }))
-    .query(async ({ input }) => {
+    .mutation(async ({ input }) => {
       try {
         // Check if the user already exists
         const user = await Prisma.getUserByEmail(input.email);

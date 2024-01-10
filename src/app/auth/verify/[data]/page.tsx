@@ -38,12 +38,17 @@ export default function SignUpPage() {
   const { email, token } = JSON.parse(decodedData);
 
   // Verify the token and store the status depending on the result
-  const query = trpc.verifyToken.useQuery({ email, token }, PREVENT_TRPC_FETCH);
+  const { mutateAsync: verifyToken } = trpc.verifyToken.useMutation(); // TODO: FIX
+
   useEffect(() => {
-    query.data?.success
-      ? setStatus(AuthStatus.IDLE)
-      : setStatus(AuthStatus.INVALID_TOKEN);
-  }, [query.data]);
+    if (PREVENT_TRPC_FETCH) return;
+
+    verifyToken({ email, token }).then((res) => {
+      res.success
+        ? setStatus(AuthStatus.IDLE)
+        : setStatus(AuthStatus.INVALID_TOKEN);
+    });
+  }, [email, token, verifyToken]);
 
   /**
    * When the user submits the form, send an api request to create their account
