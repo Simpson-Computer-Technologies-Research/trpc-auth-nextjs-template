@@ -6,8 +6,8 @@ import { LoadingRelative } from "@/components/Loading";
 import MainWrapper from "@/components/MainWrapper";
 import SignInWithGoogleButton from "@/components/SignInWithGoogleButton";
 import SuccessMessage from "@/components/SuccessMessage";
-import { PREVENT_TRPC_FETCH } from "@/server/utils/configs";
-import { trpc } from "@/trpc/client";
+import { PREVENT_TRPC_FETCH } from "@/lib/server/utils/configs";
+import { trpc } from "@/lib/trpc/client";
 import { FormEvent, useState } from "react";
 
 enum SignUpStatus {

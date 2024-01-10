@@ -6,7 +6,7 @@ import LoadingCenter, { LoadingRelative } from "@/components/Loading";
 import MainWrapper from "@/components/MainWrapper";
 import SignOutButton from "@/components/SignOutButton";
 import { Status, type Response } from "@/types/types";
-import { trpc } from "@/trpc/client";
+import { trpc } from "@/lib/trpc/client";
 import { SessionProvider, useSession } from "next-auth/react";
 import { useState } from "react";
 

@@ -7,8 +7,8 @@ import MainWrapper from "@/components/MainWrapper";
 import SignInWithGoogleButton from "@/components/SignInWithGoogleButton";
 import SuccessMessage from "@/components/SuccessMessage";
 import { base64decode, sha256 } from "@/lib/crypto";
-import { PREVENT_TRPC_FETCH } from "@/server/utils/configs";
-import { trpc } from "@/trpc/client";
+import { PREVENT_TRPC_FETCH } from "@/lib/server/utils/configs";
+import { trpc } from "@/lib/trpc/client";
 import { usePathname, useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 
