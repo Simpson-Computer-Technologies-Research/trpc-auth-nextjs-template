@@ -111,12 +111,15 @@ export default function SignUpPage() {
           type="password"
           placeholder="Password"
           value={password}
+          required={true}
           onChange={(e) => setPassword(e.target.value)}
           className="border border-black p-3 text-sm"
         />
         <input
           type="password"
           placeholder="Verify Password"
+          value={verificationPassword}
+          required={true}
           onChange={(e) => setVerificationPassword(e.target.value)}
           className="border border-black p-3 text-sm"
         />
