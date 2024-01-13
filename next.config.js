@@ -7,6 +7,9 @@ const config = {
       optimizePackageImports: ["three", "react-three"],
     },
     */
+  images: {
+    remotePatterns: [{ hostname: "lh3.googleusercontent.com" }],
+  },
 
   /**
    * If you are using `appDir` then you must comment the below `i18n` config out.
