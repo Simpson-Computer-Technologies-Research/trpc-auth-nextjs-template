@@ -4,20 +4,17 @@ import Button from "@/components/Button";
 import ErrorMessage from "@/components/ErrorMessage";
 import { LoadingRelative } from "@/components/Loading";
 import MainWrapper from "@/components/MainWrapper";
-import SignInWithGoogleButton from "@/components/SignInWithGoogleButton";
 import SuccessMessage from "@/components/SuccessMessage";
 import { base64decode, sha256 } from "@/lib/crypto";
 import { trpc } from "@/lib/trpc/client";
 import { usePathname, useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
-import { invalidPassword, invalidSocials } from "./_utils/input";
+import { isValidPassword } from "./_utils/input";
 import {
   MAX_NAME_LENGTH,
   MAX_PASSWORD_LENGTH,
-  MAX_SOCIALS_LENGTH,
   MIN_NAME_LENGTH,
   MIN_PASSWORD_LENGTH,
-  MIN_SOCIALS_LENGTH,
 } from "@/lib/constants";
 
 enum AuthStatus {
@@ -36,8 +33,6 @@ export default function SignUpPage() {
   const [password, setPassword] = useState("");
   const [verificationPassword, setVerificationPassword] = useState("");
   const [name, setName] = useState("");
-  const [linkedIn, setLinkedIn] = useState("");
-  const [github, setGithub] = useState("");
   const [status, setStatus] = useState(AuthStatus.INVALID_TOKEN);
 
   // tRPC Query creating the user
@@ -79,8 +74,6 @@ export default function SignUpPage() {
       email,
       token,
       password: encryptedPassword,
-      linkedIn,
-      github,
       name,
     });
 
@@ -109,8 +102,7 @@ export default function SignUpPage() {
 
   // Store whether the submission button should be disabled
   const disableSubmitButton =
-    invalidPassword(password, verificationPassword) ||
-    invalidSocials(linkedIn, github) ||
+    !isValidPassword(password, verificationPassword) ||
     status === AuthStatus.SUCCESS;
 
   // If the token is valid, return the password form
@@ -161,24 +153,6 @@ export default function SignUpPage() {
           onChange={(e) => setName(e.target.value)}
           className="rounded-md border p-3 text-sm"
         />
-        <input
-          type="text"
-          required={true}
-          placeholder="LinkedIn"
-          maxLength={MAX_SOCIALS_LENGTH}
-          minLength={MIN_SOCIALS_LENGTH}
-          onChange={(e) => setLinkedIn(e.target.value)}
-          className="rounded-md border p-3 text-sm"
-        />
-        <input
-          type="text"
-          required={true}
-          placeholder="Github"
-          maxLength={MAX_SOCIALS_LENGTH}
-          minLength={MIN_SOCIALS_LENGTH}
-          onChange={(e) => setGithub(e.target.value)}
-          className="rounded-md border p-3 text-sm"
-        />
 
         <Button type="submit" disabled={disableSubmitButton}>
           {status === AuthStatus.LOADING ? (
@@ -195,18 +169,11 @@ export default function SignUpPage() {
 
         {/* If the inputted passwords are invalid, return an error */}
         {(password || verificationPassword) &&
-          invalidPassword(password, verificationPassword) && (
+          !isValidPassword(password, verificationPassword) && (
             <ErrorMessage>
               Password must be at least {MIN_PASSWORD_LENGTH} characters long.
             </ErrorMessage>
           )}
-
-        {/* If the inputted socials are invalid, return an error */}
-        {(linkedIn || github) && invalidSocials(linkedIn, github) && (
-          <ErrorMessage>
-            Socials must be at least {MIN_SOCIALS_LENGTH} characters long.
-          </ErrorMessage>
-        )}
 
         {/* The sign up was a success - they can now sign in */}
         {status === AuthStatus.SUCCESS && (
