@@ -10,8 +10,6 @@ export default function SuccessMessage({
   children: ReactNode;
 }): JSX.Element {
   return (
-    <p className="text-center text-xs font-light text-green-500 lg:text-base">
-      {children}
-    </p>
+    <p className="text-center text-sm font-light text-green-500">{children}</p>
   );
 }
