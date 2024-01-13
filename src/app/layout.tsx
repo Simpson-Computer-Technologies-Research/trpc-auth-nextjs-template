@@ -10,8 +10,9 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Next Auth Template",
-  description: "Next Auth Template",
+  title: "trpc-auth-nextjs-template | Dashboard",
+  description:
+    "A template for Next.js apps with authentication using NextAuth.js and trpc.",
 };
 
 export default function RootLayout({

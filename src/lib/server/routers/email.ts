@@ -6,12 +6,13 @@ import { generateEmailAuthorizationUrl } from "@/lib/auth";
 
 async function generateEmailRequestBody(email: string) {
   const api_key = process.env.SMTP_PROVIDER_API_KEY;
+  const sender_email = process.env.SMTP_SENDER_EMAIL;
   const url = await generateEmailAuthorizationUrl(email);
 
   return {
     api_key,
     to: [`<${email}>`],
-    sender: `tristan@simpsonresearch.ca`,
+    sender: sender_email,
     subject: "Account Creation",
     text_body: `Your account creation link is: ${url}\n\nThis link will expire in 10 minutes.`,
     html_body: `<p>Your account creation link is: <a href="${url}">${url}</a></p><p>This link will expire in 10 minutes.</p>`,

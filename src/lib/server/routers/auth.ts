@@ -5,69 +5,56 @@ import { z } from "zod";
 import { Prisma } from "@/lib/prisma";
 import { verifyAuthorizationToken } from "@/lib/auth";
 import { genId, sha256 } from "@/lib/crypto";
+import { DEFAULT_USER_IMAGE, EMPTY_STRING } from "@/lib/constants";
 
 export const authRouter = {
   verifyToken: publicProcedure
-    .input(z.object({ token: zstring(), email: zstring() }))
+    .input(
+      z.object({
+        token: zstring(),
+        email: zstring(),
+      }),
+    )
     .mutation(async ({ input }) => {
-      try {
-        // Check if the user already exists
-        const user = await Prisma.getUserByEmail(input.email);
-        if (user) {
-          return {
-            ...Response.InvalidQuery,
-            message: "User already exists",
-          };
-        }
-
-        const res = await verifyAuthorizationToken(
-          10,
-          input.token,
-          input.email
-        );
-
-        return res
-          ? { ...Response.Success, message: "Valid token" }
-          : { ...Response.InvalidQuery, message: "Invalid token" };
-      } catch {
+      // Check if the user already exists
+      const user = await Prisma.getUserByEmail(input.email);
+      if (user) {
         return {
-          ...Response.InternalError,
-          message: "Failed to verify token",
+          ...Response.InvalidQuery,
+          message: "User already exists",
         };
       }
+
+      const res = await verifyAuthorizationToken(10, input.token, input.email);
+
+      return res
+        ? { ...Response.Success, message: "Valid token" }
+        : { ...Response.InvalidQuery, message: "Invalid token" };
     }),
   getUserByEmail: publicProcedure
     .input(z.object({ email: zstring() }))
     .query(async ({ input }) => {
-      try {
-        const user = await Prisma.getUserByEmail(input.email);
+      const user = await Prisma.getUserByEmail(input.email);
 
-        if (!user) {
-          return {
-            ...Response.InvalidQuery,
-            message: "User not found",
-            user: null,
-          };
-        }
-
-        return { ...Response.Success, user };
-      } catch {
+      if (!user) {
         return {
-          ...Response.InternalError,
-          message: "Failed to get user",
+          ...Response.InvalidQuery,
+          message: "User not found",
           user: null,
         };
       }
+
+      return { ...Response.Success, user };
     }),
   createUser: publicProcedure
     .input(
       z.object({
         token: zstring(),
         email: zstring(),
-        password: zstring(),
-        // name: zstring().optional(),
-        // image: zstring().optional(),
-      })
+        password: zstring().optional(),
+        name: zstring().optional(),
+        image: zstring().optional(),
+      }),
     )
     .mutation(async ({ input }) => {
       const res = await verifyAuthorizationToken(20, input.token, input.email);
@@ -87,30 +74,30 @@ export const authRouter = {
 
       // Get the user's info
       const secret: string = await sha256(input.email + bearerSecret);
-      try {
-        let user = await Prisma.getUser(secret);
+      let user = await Prisma.getUser(secret).catch(() => null);
 
-        // If the user doesn't exist, create them
+      // If the user doesn't exist, create them
+      if (!user) {
+        const id: string = await genId();
+
+        user = await Prisma.createUser({
+          id,
+          secret,
+          image: input.image || DEFAULT_USER_IMAGE,
+          email: input.email,
+          password: input.password || EMPTY_STRING,
+          name: input.name || EMPTY_STRING,
+        });
+
         if (!user) {
-          const id: string = await genId();
-          const image = "/images/default-pfp.png";
-
-          user = await Prisma.createUser(
-            id,
-            input.email,
-            input.password,
-            image,
-            secret
-          );
+          return {
+            ...Response.InternalError,
+            message: "Failed to create user",
+            user: null,
+          };
         }
-
-        return { ...Response.Success, user };
-      } catch (e) {
-        return {
-          ...Response.InternalError,
-          message: "Failed to create user",
-          user: null,
-        };
       }
+
+      return { ...Response.Success, user };
     }),
 };

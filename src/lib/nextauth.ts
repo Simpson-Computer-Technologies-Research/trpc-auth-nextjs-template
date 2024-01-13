@@ -2,9 +2,15 @@ import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { sha256 } from "./crypto";
 import Credentials from "next-auth/providers/credentials";
-import { Prisma } from "./prisma";
+import { trpc } from "./trpc/serverClient";
+import {
+  generateAuthorizationToken,
+  getTimeForAuthorizationToken,
+} from "./auth";
+import { EMPTY_STRING } from "./constants";
 
 export const handler = NextAuth({
+  secret: process.env.NEXTAUTH_SECRET,
   pages: {
     signIn: "/auth/signin",
   },
@@ -19,6 +25,7 @@ export const handler = NextAuth({
         email: { label: "Email", type: "text" },
         password: { label: "Password", type: "password" },
       },
+
       async authorize(credentials) {
         const bearerSecret: string | undefined = process.env.BEARER_SECRET;
         if (!bearerSecret) {
@@ -30,7 +37,11 @@ export const handler = NextAuth({
         }
 
         // Get the user from the database
-        const user = await Prisma.getUserByEmail(credentials.email);
+        const data = await trpc.getUserByEmail({
+          email: credentials.email,
+        });
+
+        const user = data?.user;
         if (!user) {
           return null;
         }
@@ -60,19 +71,45 @@ export const handler = NextAuth({
         throw new Error("BEARER_SECRET is not defined");
       }
 
-      const email: string = session.user.email;
-      // const name: string = session.user.name;
-      // const image: string = session.user.image || "/images/default-pfp.png";
-      const secret: string = await sha256(email + bearerSecret);
+      // If the user is already fetched from the database, return the session
+      if (session.user.id) {
+        return session;
+      }
 
       // Get the user from the database
-      const user = await Prisma.getUser(secret);
+      const data = await trpc.getUserByEmail({
+        email: session.user.email,
+      });
+      const user = data?.user;
+
       if (!user) {
-        throw new Error("User not found");
+        // Create the user
+        const time = getTimeForAuthorizationToken(0);
+        const authToken = await generateAuthorizationToken(
+          session.user.email,
+          time,
+        );
+
+        await trpc.createUser({
+          token: authToken,
+          email: session.user.email,
+          name: session.user.name,
+          image: session.user.image,
+        });
+
+        // Return the session
+        return session;
       }
 
       // Set the session user id to the user's id
-      session.user.id = user.id;
+      session.user = {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        image: user.image,
+        secret: user.secret,
+      };
+
       return session;
     },
   },

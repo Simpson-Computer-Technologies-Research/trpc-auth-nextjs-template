@@ -1,12 +1,16 @@
 import { PrismaClient } from "@prisma/client";
 import { User } from "next-auth";
 import { genId } from "./crypto";
+import {
+  DEFAULT_USER_IMAGE,
+  DEFAULT_USER_NAME,
+  EMPTY_STRING,
+} from "./constants";
 
 export class Prisma extends PrismaClient {
   constructor() {
     super();
     this.$connect();
-    console.log("Prisma connected");
   }
 
   /**
@@ -27,7 +31,7 @@ export class Prisma extends PrismaClient {
    */
   public static readonly findMany = async <T>(
     table: string,
-    opts: any
+    opts: any,
   ): Promise<T[]> => {
     const tableRef: any = Prisma.getTable(table);
     return await tableRef.findMany(opts);
@@ -41,7 +45,7 @@ export class Prisma extends PrismaClient {
    */
   public static readonly findOne = async <T>(
     table: string,
-    opts: any
+    opts: any,
   ): Promise<T | null> => {
     const tableRef: any = Prisma.getTable(table);
     return await tableRef.findFirst(opts);
@@ -55,7 +59,7 @@ export class Prisma extends PrismaClient {
    */
   public static readonly create = async <T>(
     table: string,
-    opts: any
+    opts: any,
   ): Promise<T> => {
     const tableRef: any = Prisma.getTable(table);
     return await tableRef.create(opts);
@@ -70,7 +74,7 @@ export class Prisma extends PrismaClient {
    */
   public static readonly update = async <T>(
     table: string,
-    data: any
+    data: any,
   ): Promise<T> => {
     const tableRef: any = Prisma.getTable(table);
     return await tableRef.update(data);
@@ -84,7 +88,7 @@ export class Prisma extends PrismaClient {
    */
   public static readonly delete = async <T>(
     table: string,
-    opts: any
+    opts: any,
   ): Promise<T> => {
     const tableRef: any = Prisma.getTable(table);
     return await tableRef.delete(opts);
@@ -96,13 +100,17 @@ export class Prisma extends PrismaClient {
    * @returns The user
    */
   public static readonly getUserByEmail = async (
-    email: string
+    email: string,
   ): Promise<User | null> => {
-    return await Prisma.findOne("user", {
-      where: {
-        email,
-      },
-    });
+    try {
+      return await Prisma.findOne("user", {
+        where: {
+          email,
+        },
+      });
+    } catch {
+      return null;
+    }
   };
 
   /**
@@ -111,15 +119,17 @@ export class Prisma extends PrismaClient {
    * @returns The user's data
    */
   public static readonly getUser = async (
-    userSecret: string
+    userSecret: string,
   ): Promise<User | null> => {
-    const user: User | null = await Prisma.findOne("user", {
-      where: {
-        secret: userSecret,
-      },
-    });
-
-    return user;
+    try {
+      return await Prisma.findOne("user", {
+        where: {
+          secret: userSecret,
+        },
+      });
+    } catch {
+      return null;
+    }
   };
 
   /**
@@ -127,7 +137,11 @@ export class Prisma extends PrismaClient {
    * @returns The user's data
    */
   public static readonly getUsers = async (): Promise<(User | null)[]> => {
-    return await Prisma.findMany("user", {}); // exclude the user secret
+    try {
+      return await Prisma.findMany("user", {});
+    } catch {
+      return [];
+    }
   };
 
   /**
@@ -136,15 +150,19 @@ export class Prisma extends PrismaClient {
    * @returns Whether the user exists
    */
   public static readonly userExists = async (
-    userSecret: string
+    userSecret: string,
   ): Promise<boolean> => {
-    const user: User | null = await Prisma.findOne("user", {
-      where: {
-        secret: userSecret,
-      },
-    });
+    try {
+      const user: User | null = await Prisma.findOne("user", {
+        where: {
+          secret: userSecret,
+        },
+      });
 
-    return user ? true : false;
+      return user ? true : false;
+    } catch {
+      return false;
+    }
   };
 
   /**
@@ -154,25 +172,24 @@ export class Prisma extends PrismaClient {
    * @param secret The user's secret
    */
   public static readonly createUser = async (
-    id: string,
-    email: string,
-    password: string,
-    image: string,
-    secret: string
-  ): Promise<User> => {
-    const DEFAULT_USER_IMAGE = "/images/default-pfp.png";
+    user: User,
+  ): Promise<User | null> => {
     const generatedPassword = await genId();
 
-    return await Prisma.create("user", {
-      data: {
-        id,
-        secret,
-        email,
-        password: password || generatedPassword,
-        image: image || DEFAULT_USER_IMAGE,
-        // permissions: [0],
-      },
-    });
+    try {
+      return await Prisma.create("user", {
+        data: {
+          id: user.id,
+          secret: user.secret,
+          email: user.email,
+          password: user.password || generatedPassword,
+          name: user.name || DEFAULT_USER_NAME,
+          image: user.image || DEFAULT_USER_IMAGE,
+        },
+      });
+    } catch {
+      return null;
+    }
   };
 }
 

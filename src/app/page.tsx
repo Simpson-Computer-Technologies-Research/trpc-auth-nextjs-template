@@ -1,14 +1,15 @@
 "use client";
 
 import Button from "@/components/Button";
-import ErrorMessage from "@/components/ErrorMessage";
-import LoadingCenter, { LoadingRelative } from "@/components/Loading";
+import LoadingCenter from "@/components/Loading";
 import MainWrapper from "@/components/MainWrapper";
 import SignOutButton from "@/components/SignOutButton";
 import { Status, type Response } from "@/types/types";
 import { trpc } from "@/lib/trpc/client";
 import { SessionProvider, useSession } from "next-auth/react";
 import { useState } from "react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
   return (
@@ -20,23 +21,12 @@ export default function Home() {
 
 function Main(): JSX.Element {
   const { data: session, status: sessionStatus } = useSession();
+  const router = useRouter();
 
-  const [status, setStatus] = useState<Status>(Status.IDLE);
-  const [text, setText] = useState<string>("");
-  const [data, setData] = useState<Response>();
+  if (sessionStatus === "unauthenticated") {
+    router.push("/auth/signin");
 
-  // tRPC Query (fetching data)
-  const { refetch } = trpc.testQuery.useQuery({ text });
-
-  // tRPC Mutation (updating data)
-  const { mutate } = trpc.testMutate.useMutation();
-
-  // Refetch the query
-  async function onFetch() {
-    const res = await refetch();
-
-    setStatus(res.error ? Status.ERROR : Status.SUCCESS);
-    setData(res.data);
+    return <LoadingCenter />;
   }
 
   if (sessionStatus === "loading") {
@@ -46,38 +36,26 @@ function Main(): JSX.Element {
   if (sessionStatus === "authenticated" && session) {
     return (
       <MainWrapper className="gap-2">
-        <h1 className="text-2xl font-bold">Welcome {session.user.name}</h1>
-        <SignOutButton />
-
-        <input
-          className="border border-black px-4 py-3"
-          placeholder="Enter text"
-          type="text"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-        />
-
-        <Button onClick={async () => await onFetch()}>Fetch data</Button>
-        <Button onClick={async () => mutate({ text })}>Update data</Button>
-
-        {status === Status.LOADING && <LoadingRelative />}
-        {status === Status.SUCCESS && <ResponseData data={data!} />}
-        {status === Status.ERROR && <ErrorMessage>Error!</ErrorMessage>}
+        <h1 className="text-9xl font-bold">Welcome {session.user.name}!</h1>
+        <div className="fixed top-0 flex w-screen flex-row items-center justify-between p-5">
+          <Image
+            src={session.user.image}
+            width={65}
+            height={65}
+            className="rounded-full"
+            alt="..."
+          />
+          <SignOutButton />
+        </div>
       </MainWrapper>
     );
   }
 
   return (
-    <MainWrapper>
+    <MainWrapper className="gap-2">
+      <h1 className="text-6xl font-bold">Welcome</h1>
+      <p className="mb-3">You are not signed in.</p>
       <Button href="/api/auth/signin">Sign in</Button>
     </MainWrapper>
-  );
-}
-
-function ResponseData({ data }: { data: Response }) {
-  return (
-    <p className="mt-3">
-      <strong>Response data:</strong> {data.result}
-    </p>
   );
 }

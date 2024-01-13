@@ -10,6 +10,6 @@ export default function ErrorMessage({
   children: ReactNode;
 }): JSX.Element {
   return (
-    <p className="text-center text-sm text-red-600 lg:text-base">{children}</p>
+    <p className="text-center text-xs text-red-600 lg:text-base">{children}</p>
   );
 }

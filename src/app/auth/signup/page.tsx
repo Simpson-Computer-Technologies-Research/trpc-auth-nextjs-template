@@ -26,11 +26,11 @@ export default function SignUpPage() {
   // tRPC Queries for checking if the user already exists and sending an email
   const { refetch: userExists } = trpc.getUserByEmail.useQuery(
     { email },
-    PREVENT_TRPC_FETCH
+    PREVENT_TRPC_FETCH,
   );
   const { refetch: sendEmail } = trpc.sendEmail.useQuery(
     { email },
-    PREVENT_TRPC_FETCH
+    PREVENT_TRPC_FETCH,
   );
 
   // onSubmit function
@@ -54,51 +54,67 @@ export default function SignUpPage() {
   };
 
   return (
-    <MainWrapper className="gap-2 w-full">
-      <h1 className="text-6xl font-thin my-7 uppercase">Sign up</h1>
+    <MainWrapper>
       <form
-        className="flex flex-col gap-4 w-full"
+        className="flex w-[40rem] flex-col gap-4 rounded-md border p-20"
         onSubmit={async (e) => await onSubmit(e)}
       >
+        <h1 className="text-7xl font-extrabold tracking-wide text-gray-900">
+          Create an account
+        </h1>
+        <p className="mb-2 text-gray-400">
+          An email will be sent to you to verify your account. From there you
+          can set your password and sign in.
+        </p>
+
         <input
           type="email"
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="border border-black p-3 text-sm"
+          className="rounded-md border p-3 text-sm"
         />
+
         <Button type="submit" disabled={status === SignUpStatus.LOADING}>
           {status === SignUpStatus.LOADING ? (
-            <LoadingRelative className="w-5 h-5" />
+            <LoadingRelative className="h-5 w-5 fill-white" />
           ) : (
             "Sign up"
           )}
         </Button>
+
         <SignInWithGoogleButton />
-      </form>
 
-      {/* The sign up was a success - they must check their email for verification */}
-      {status === SignUpStatus.SUCCESS && (
-        <SuccessMessage>
-          An email has been sent to {email}. Check your inbox for a link to
-          create your account.
-        </SuccessMessage>
-      )}
-
-      {/* An error has occurred - most likely an internal error */}
-      {status === SignUpStatus.ERROR && (
-        <ErrorMessage>An error has occurred. Please try again.</ErrorMessage>
-      )}
-
-      {/* The user already exists - they must sign in to continue */}
-      {status === SignUpStatus.USER_EXISTS && (
-        <ErrorMessage>
-          An user with this email already exists.{" "}
+        <p className="my-4 text-gray-500">
+          Already have an account?{" "}
           <a href="/auth/signin" className="underline">
             Sign in
           </a>
-        </ErrorMessage>
-      )}
+        </p>
+
+        {/* The sign up was a success - they must check their email for verification */}
+        {status === SignUpStatus.SUCCESS && (
+          <SuccessMessage>
+            An email has been sent to {email}. Check your inbox for a link to
+            create your account.
+          </SuccessMessage>
+        )}
+
+        {/* An error has occurred - most likely an internal error */}
+        {status === SignUpStatus.ERROR && (
+          <ErrorMessage>An error has occurred. Please try again.</ErrorMessage>
+        )}
+
+        {/* The user already exists - they must sign in to continue */}
+        {status === SignUpStatus.USER_EXISTS && (
+          <ErrorMessage>
+            An user with this email already exists.{" "}
+            <a href="/auth/signin" className="underline">
+              Sign in
+            </a>
+          </ErrorMessage>
+        )}
+      </form>
     </MainWrapper>
   );
 }

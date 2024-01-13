@@ -11,7 +11,7 @@ interface ButtonProps {
   onClick?: (event: any) => void;
 }
 export default function Button(
-  props: PropsWithChildren<ButtonProps>
+  props: PropsWithChildren<ButtonProps>,
 ): JSX.Element {
   return (
     <button
@@ -27,15 +27,9 @@ export default function Button(
         }
       }}
       className={cn(
-        "btn flex flex-row items-center justify-center gap-2 border border-black px-10 py-3 text-left text-sm duration-300 ease-in-out disabled:opacity-50",
-        props.dark
-          ? props.disabled
-            ? "bg-black text-white"
-            : "bg-black text-white hover:bg-white hover:text-black"
-          : props.disabled
-          ? "text-black"
-          : "text-black hover:bg-black hover:text-white",
-        props.className
+        "flex flex-row items-center justify-center gap-2 rounded-md bg-blue-600 px-10 py-3 text-left text-sm text-white duration-100 ease-in-out hover:bg-blue-700 disabled:opacity-50",
+        props.disabled ? "" : "",
+        props.className,
       )}
     >
       {props.children}

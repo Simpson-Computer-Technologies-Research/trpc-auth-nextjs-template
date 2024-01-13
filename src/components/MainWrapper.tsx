@@ -11,8 +11,8 @@ export default function MainWrapper({
   return (
     <main
       className={cn(
-        "flex min-h-screen flex-col items-center justify-center p-24",
-        className
+        "flex min-h-screen w-screen flex-col items-center justify-center p-24",
+        className,
       )}
     >
       {children}
