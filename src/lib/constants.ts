@@ -1,3 +1,5 @@
+import { Permission } from "@/types/types";
+
 export const MIN_PASSWORD_LENGTH = 8;
 export const MAX_PASSWORD_LENGTH = 32;
 
@@ -10,3 +12,4 @@ export const MAX_EMAIL_LENGTH = 64;
 export const EMPTY_STRING = "";
 export const DEFAULT_USER_IMAGE = "/images/default-pfp.png";
 export const DEFAULT_USER_NAME = "User";
+export const DEFAULT_USER_PERMISSIONS = [Permission.DEFAULT];

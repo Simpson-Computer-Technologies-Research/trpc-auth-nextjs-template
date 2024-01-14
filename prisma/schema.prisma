@@ -15,9 +15,10 @@ model User {
   secret    String   @unique
   email     String   @unique
 
-  name     String
-  password String
-  image    String
+  name        String
+  password    String
+  image       String
+  permissions String[]
 }
 
 // npx prisma migrate dev --name init

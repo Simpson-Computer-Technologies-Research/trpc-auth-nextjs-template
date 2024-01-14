@@ -4,7 +4,7 @@ import { genId } from "./crypto";
 import {
   DEFAULT_USER_IMAGE,
   DEFAULT_USER_NAME,
-  EMPTY_STRING,
+  DEFAULT_USER_PERMISSIONS,
 } from "./constants";
 
 export class Prisma extends PrismaClient {
@@ -185,6 +185,7 @@ export class Prisma extends PrismaClient {
           password: user.password || generatedPassword,
           name: user.name || DEFAULT_USER_NAME,
           image: user.image || DEFAULT_USER_IMAGE,
+          permissions: user.permissions || DEFAULT_USER_PERMISSIONS,
         },
       });
     } catch {

@@ -4,10 +4,7 @@ import Button from "@/components/Button";
 import LoadingCenter from "@/components/Loading";
 import MainWrapper from "@/components/MainWrapper";
 import SignOutButton from "@/components/SignOutButton";
-import { Status, type Response } from "@/types/types";
-import { trpc } from "@/lib/trpc/client";
 import { SessionProvider, useSession } from "next-auth/react";
-import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
