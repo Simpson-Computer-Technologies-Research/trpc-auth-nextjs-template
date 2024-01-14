@@ -7,7 +7,6 @@ import {
   generateAuthorizationToken,
   getTimeForAuthorizationToken,
 } from "./auth";
-import { EMPTY_STRING } from "./constants";
 
 export const handler = NextAuth({
   secret: process.env.NEXTAUTH_SECRET,
@@ -59,6 +58,7 @@ export const handler = NextAuth({
           email: user.email,
           image: user.image,
           secret: user.secret,
+          permissions: user.permissions,
         };
       },
     }),
@@ -108,6 +108,7 @@ export const handler = NextAuth({
         email: user.email,
         image: user.image,
         secret: user.secret,
+        permissions: user.permissions,
       };
 
       return session;

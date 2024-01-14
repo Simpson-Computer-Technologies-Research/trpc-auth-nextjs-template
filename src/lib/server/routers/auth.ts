@@ -5,7 +5,11 @@ import { z } from "zod";
 import { Prisma } from "@/lib/prisma";
 import { verifyAuthorizationToken } from "@/lib/auth";
 import { genId, sha256 } from "@/lib/crypto";
-import { DEFAULT_USER_IMAGE, EMPTY_STRING } from "@/lib/constants";
+import {
+  DEFAULT_USER_IMAGE,
+  DEFAULT_USER_PERMISSIONS,
+  EMPTY_STRING,
+} from "@/lib/constants";
 
 export const authRouter = {
   verifyToken: publicProcedure
@@ -87,6 +91,7 @@ export const authRouter = {
           email: input.email,
           password: input.password || EMPTY_STRING,
           name: input.name || EMPTY_STRING,
+          permissions: DEFAULT_USER_PERMISSIONS,
         });
 
         if (!user) {
