@@ -1,22 +1,5 @@
-export interface Response {
-  result: any;
-  success: boolean;
-  message: string;
-  timestamp: number;
-  id: string;
-}
+import { type Dispatch, type SetStateAction } from "react";
 
-export enum Status {
-  IDLE,
-  LOADING,
-  SUCCESS,
-  ERROR,
-}
-
-export enum Permission {
-  DEFAULT = "default",
-  READ = "read",
-  WRITE = "write",
-  DELETE = "delete",
-  ADMIN = "admin",
-}
+export type State<T> = Dispatch<SetStateAction<T>>;
+export type Nullable<T> = T | null;
+export type Optional<T> = T | undefined;

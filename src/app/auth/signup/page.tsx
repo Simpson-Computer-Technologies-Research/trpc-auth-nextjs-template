@@ -1,16 +1,15 @@
 "use client";
 
-import Button from "@/components/Button";
+import Button from "@/components/buttons/Button";
 import ErrorMessage from "@/components/ErrorMessage";
-import { LoadingRelative } from "@/components/Loading";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 import MainWrapper from "@/components/MainWrapper";
 import SignInWithGoogleButton from "@/components/SignInWithGoogleButton";
 import SuccessMessage from "@/components/SuccessMessage";
-import { PREVENT_TRPC_FETCH } from "@/lib/server/utils/configs";
 import { trpc } from "@/lib/trpc/client";
 import { FormEvent, useState } from "react";
 
-enum SignUpStatus {
+enum Status {
   IDLE,
   SUCCESS,
   ERROR,
@@ -21,36 +20,39 @@ enum SignUpStatus {
 export default function SignUpPage() {
   // States for email and password
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState(SignUpStatus.IDLE);
+  const [status, setStatus] = useState(Status.IDLE);
 
   // tRPC Queries for checking if the user already exists and sending an email
-  const { refetch: userExists } = trpc.getUserByEmail.useQuery(
-    { email },
-    PREVENT_TRPC_FETCH,
-  );
-  const { refetch: sendEmail } = trpc.sendEmail.useQuery(
-    { email },
-    PREVENT_TRPC_FETCH,
-  );
+  const { mutateAsync: userExists } = trpc.userExists.useMutation();
+  const { mutateAsync: sendEmail } = trpc.sendEmail.useMutation();
 
-  // onSubmit function
-  const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  /**
+   * The onSubmit function
+   *
+   * @param e The form event
+   * @returns void
+   */
+  const onSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
 
-    setStatus(SignUpStatus.LOADING);
+    setStatus(Status.LOADING);
 
     // Check if the user already exists - if so, set the status to user exists
-    const userResponse = await userExists();
-    if (userResponse.data?.success) {
-      return setStatus(SignUpStatus.USER_EXISTS);
+    const userResponse = await userExists({
+      email,
+    });
+    if (userResponse.exists) {
+      return setStatus(Status.USER_EXISTS);
     }
 
     // Send an api request to send a verification email to the provided mail address
-    const emailResponse = await sendEmail();
+    const emailResponse = await sendEmail({
+      email,
+    });
 
-    emailResponse.data?.success // If the response is ok, set the status to success, else to error
-      ? setStatus(SignUpStatus.SUCCESS)
-      : setStatus(SignUpStatus.ERROR);
+    emailResponse.success // If the response is ok, set the status to success, else to error
+      ? setStatus(Status.SUCCESS)
+      : setStatus(Status.ERROR);
   };
 
   return (
@@ -75,9 +77,9 @@ export default function SignUpPage() {
           className="rounded-md border p-3 text-sm"
         />
 
-        <Button type="submit" disabled={status === SignUpStatus.LOADING}>
-          {status === SignUpStatus.LOADING ? (
-            <LoadingRelative className="h-5 w-5 fill-white" />
+        <Button type="submit" disabled={status === Status.LOADING}>
+          {status === Status.LOADING ? (
+            <LoadingSpinner className="h-5 w-5 fill-white" />
           ) : (
             "Sign up"
           )}
@@ -93,7 +95,7 @@ export default function SignUpPage() {
         </p>
 
         {/* The sign up was a success - they must check their email for verification */}
-        {status === SignUpStatus.SUCCESS && (
+        {status === Status.SUCCESS && (
           <SuccessMessage>
             An email has been sent to {email}. Check your inbox for a link to
             create your account.
@@ -101,12 +103,12 @@ export default function SignUpPage() {
         )}
 
         {/* An error has occurred - most likely an internal error */}
-        {status === SignUpStatus.ERROR && (
+        {status === Status.ERROR && (
           <ErrorMessage>An error has occurred. Please try again.</ErrorMessage>
         )}
 
         {/* The user already exists - they must sign in to continue */}
-        {status === SignUpStatus.USER_EXISTS && (
+        {status === Status.USER_EXISTS && (
           <ErrorMessage>
             An user with this email already exists.{" "}
             <a href="/auth/signin" className="underline">

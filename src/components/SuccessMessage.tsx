@@ -1,15 +1,28 @@
-import { type ReactNode } from "react";
+import { cn } from "@/lib/utils/cn";
+import { DetailedHTMLProps, FC, HTMLAttributes, ReactNode } from "react";
+
+type HTMLParaProps = DetailedHTMLProps<
+  HTMLAttributes<HTMLParagraphElement>,
+  HTMLParagraphElement
+>;
 
 /**
  * Success message component
+ *
  * @returns JSX.Element
  */
-export default function SuccessMessage({
-  children,
-}: {
-  children: ReactNode;
-}): JSX.Element {
+const SuccessMessage: FC<HTMLParaProps> = (props): JSX.Element => {
   return (
-    <p className="text-center text-sm font-light text-green-500">{children}</p>
+    <p
+      {...props}
+      className={cn("text-center text-sm text-green-600", props.className)}
+    >
+      {props.children}
+    </p>
   );
-}
+};
+
+/**
+ * Export the component
+ */
+export default SuccessMessage;

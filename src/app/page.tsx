@@ -1,33 +1,33 @@
 "use client";
 
-import Button from "@/components/Button";
-import LoadingCenter from "@/components/Loading";
+import Button from "@/components/buttons/Button";
+import LinkButton from "@/components/buttons/LinkButton";
+import { LoadingSpinnerCenter } from "@/components/LoadingSpinner";
 import MainWrapper from "@/components/MainWrapper";
-import SignOutButton from "@/components/SignOutButton";
-import { SessionProvider, useSession } from "next-auth/react";
+import { SessionProvider, signOut, useSession } from "next-auth/react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 export default function Home() {
   return (
     <SessionProvider>
-      <Main />
+      <Components />
     </SessionProvider>
   );
 }
 
-function Main(): JSX.Element {
+function Components(): JSX.Element {
   const { data: session, status: sessionStatus } = useSession();
   const router = useRouter();
 
   if (sessionStatus === "unauthenticated") {
     router.push("/auth/signin");
 
-    return <LoadingCenter />;
+    return <LoadingSpinnerCenter />;
   }
 
   if (sessionStatus === "loading") {
-    return <LoadingCenter />;
+    return <LoadingSpinnerCenter />;
   }
 
   if (sessionStatus === "authenticated" && session) {
@@ -42,7 +42,7 @@ function Main(): JSX.Element {
             className="rounded-full"
             alt="..."
           />
-          <SignOutButton />
+          <Button onClick={async () => await signOut()}>Sign out</Button>
         </div>
       </MainWrapper>
     );
@@ -52,7 +52,7 @@ function Main(): JSX.Element {
     <MainWrapper className="gap-2">
       <h1 className="text-6xl font-bold">Welcome</h1>
       <p className="mb-3">You are not signed in.</p>
-      <Button href="/api/auth/signin">Sign in</Button>
+      <LinkButton href="/api/auth/signin">Sign in</LinkButton>
     </MainWrapper>
   );
 }

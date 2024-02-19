@@ -1,23 +1,33 @@
 import { cn } from "@/lib/utils/cn";
+import { FC, SVGProps, JSX } from "react";
 
 /**
- * Loading Component
+ * Loading Spinner Center Component
+ *
  * @returns JSX.Element
  */
-export default function LoadingCenter(): JSX.Element {
+export const LoadingSpinnerCenter: FC = (): JSX.Element => {
   return (
     <section className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 transform">
-      <LoadingRelative />
+      <LoadingSpinner />
     </section>
   );
-}
+};
 
-export function LoadingRelative(props: { className?: string }): JSX.Element {
+/**
+ * Loading Spinner Component
+ *
+ * @param props The component props
+ * @returns JSX.Element
+ */
+export const LoadingSpinner: FC<SVGProps<SVGSVGElement>> = (
+  props,
+): JSX.Element => {
   return (
     <svg
+      {...props}
       className={cn("h-20 w-20 animate-spin text-white", props.className)}
       xmlns="http://www.w3.org/2000/svg"
-      fill="none"
       viewBox="0 0 24 24"
     >
       <path
@@ -27,4 +37,4 @@ export function LoadingRelative(props: { className?: string }): JSX.Element {
       ></path>
     </svg>
   );
-}
+};

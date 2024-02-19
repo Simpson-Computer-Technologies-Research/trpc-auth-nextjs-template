@@ -1,8 +1,16 @@
 import { cn } from "@/lib/utils/cn";
+import { FC, SVGProps, JSX } from "react";
 
-export default function GoogleSvg(props: { className?: string }): JSX.Element {
+/**
+ * Google Icon Component
+ *
+ * @param props The SVG props
+ * @returns JSX.Element
+ */
+const GoogleIcon: FC<SVGProps<SVGSVGElement>> = (props): JSX.Element => {
   return (
     <svg
+      {...props}
       className={cn(props.className, "inline-block")}
       xmlns="http://www.w3.org/2000/svg"
       height="24"
@@ -28,4 +36,9 @@ export default function GoogleSvg(props: { className?: string }): JSX.Element {
       <path d="M1 1h22v22H1z" fill="none" />
     </svg>
   );
-}
+};
+
+/**
+ * Export the component
+ */
+export default GoogleIcon;

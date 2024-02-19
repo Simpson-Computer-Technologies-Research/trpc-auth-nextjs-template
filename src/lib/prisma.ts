@@ -1,11 +1,8 @@
 import { PrismaClient } from "@prisma/client";
 import { User } from "next-auth";
-import { genId } from "./crypto";
-import {
-  DEFAULT_USER_IMAGE,
-  DEFAULT_USER_NAME,
-  DEFAULT_USER_PERMISSIONS,
-} from "./constants";
+import { v4 as uuidv4 } from "uuid";
+import { sha256 } from "./crypto";
+import config from "./config/default.config";
 
 export class Prisma extends PrismaClient {
   constructor() {
@@ -33,8 +30,13 @@ export class Prisma extends PrismaClient {
     table: string,
     opts: any,
   ): Promise<T[]> => {
-    const tableRef: any = Prisma.getTable(table);
-    return await tableRef.findMany(opts);
+    try {
+      const tableRef: any = Prisma.getTable(table);
+
+      return (await tableRef.findMany(opts)) as T[];
+    } catch {
+      return [];
+    }
   };
 
   /**
@@ -47,8 +49,13 @@ export class Prisma extends PrismaClient {
     table: string,
     opts: any,
   ): Promise<T | null> => {
-    const tableRef: any = Prisma.getTable(table);
-    return await tableRef.findFirst(opts);
+    try {
+      const tableRef: any = Prisma.getTable(table);
+
+      return (await tableRef.findFirst(opts)) as T | null;
+    } catch {
+      return null;
+    }
   };
 
   /**
@@ -60,9 +67,14 @@ export class Prisma extends PrismaClient {
   public static readonly create = async <T>(
     table: string,
     opts: any,
-  ): Promise<T> => {
-    const tableRef: any = Prisma.getTable(table);
-    return await tableRef.create(opts);
+  ): Promise<T | null> => {
+    try {
+      const tableRef: any = Prisma.getTable(table);
+
+      return (await tableRef.create(opts)) as T;
+    } catch {
+      return null;
+    }
   };
 
   /**
@@ -75,13 +87,19 @@ export class Prisma extends PrismaClient {
   public static readonly update = async <T>(
     table: string,
     data: any,
-  ): Promise<T> => {
-    const tableRef: any = Prisma.getTable(table);
-    return await tableRef.update(data);
+  ): Promise<T | null> => {
+    try {
+      const tableRef: any = Prisma.getTable(table);
+
+      return (await tableRef.update(data)) as T;
+    } catch {
+      return null;
+    }
   };
 
   /**
    * Deletes a row from a table
+   *
    * @param table The table to delete from
    * @param opts The delete options
    * @returns The deleted row
@@ -89,108 +107,109 @@ export class Prisma extends PrismaClient {
   public static readonly delete = async <T>(
     table: string,
     opts: any,
-  ): Promise<T> => {
-    const tableRef: any = Prisma.getTable(table);
-    return await tableRef.delete(opts);
+  ): Promise<T | null> => {
+    try {
+      const tableRef: any = Prisma.getTable(table);
+
+      return (await tableRef.delete(opts)) as T;
+    } catch {
+      return null;
+    }
   };
 
   /**
-   * Get an user by their email
-   * @param email The email to get
+   * Get an user by their email from the database -- include password and secret
+   *
+   * @param email The user's email
+   * @returns The user
+   */
+  public static readonly getUserByEmailUnsecure = async (
+    email: string,
+  ): Promise<User | null> => {
+    return await Prisma.findOne<User>("user", {
+      where: {
+        email,
+      },
+    });
+  };
+
+  /**
+   * Get an user by their email from the database
+   *
+   * @param email The user's email
    * @returns The user
    */
   public static readonly getUserByEmail = async (
     email: string,
   ): Promise<User | null> => {
-    try {
-      return await Prisma.findOne("user", {
-        where: {
-          email,
-        },
-      });
-    } catch {
-      return null;
-    }
+    const user = await Prisma.findOne<User>("user", {
+      where: {
+        email,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        image: true,
+        permissions: true,
+        password: false,
+        secret: false,
+      },
+    });
+
+    return user;
+  };
+
+  /**
+   * Fetch whether the user exists in the database
+   *
+   * @param email The user's email
+   * @returns If the user exists
+   */
+  public static readonly userExists = async (
+    email: string,
+  ): Promise<boolean> => {
+    return (await Prisma.getUserByEmail(email)) !== null;
   };
 
   /**
    * Fetch the user data from the database
+   *
    * @param userSecret The user's secret
    * @returns The user's data
    */
-  public static readonly getUser = async (
+  public static readonly getUserBySecret = async (
     userSecret: string,
   ): Promise<User | null> => {
-    try {
-      return await Prisma.findOne("user", {
-        where: {
-          secret: userSecret,
-        },
-      });
-    } catch {
-      return null;
-    }
-  };
-
-  /**
-   * Fetch all of the users from the database
-   * @returns The user's data
-   */
-  public static readonly getUsers = async (): Promise<(User | null)[]> => {
-    try {
-      return await Prisma.findMany("user", {});
-    } catch {
-      return [];
-    }
-  };
-
-  /**
-   * Check whether the user is valid based on their user secret
-   * @param userSecret The user secret
-   * @returns Whether the user exists
-   */
-  public static readonly userExists = async (
-    userSecret: string,
-  ): Promise<boolean> => {
-    try {
-      const user: User | null = await Prisma.findOne("user", {
-        where: {
-          secret: userSecret,
-        },
-      });
-
-      return user ? true : false;
-    } catch {
-      return false;
-    }
+    return await Prisma.findOne<User>("user", {
+      where: {
+        secret: userSecret,
+      },
+    });
   };
 
   /**
    * Create a new user in the database
-   * @param email The user's email
-   * @param image The user's image
-   * @param secret The user's secret
+   *
+   * @param user The user to create
+   * @returns The created user or null if it failed
    */
   public static readonly createUser = async (
     user: User,
   ): Promise<User | null> => {
-    const generatedPassword = await genId();
+    const generatedPassword = await sha256(uuidv4());
 
-    try {
-      return await Prisma.create("user", {
-        data: {
-          id: user.id,
-          secret: user.secret,
-          email: user.email,
-          password: user.password || generatedPassword,
-          name: user.name || DEFAULT_USER_NAME,
-          image: user.image || DEFAULT_USER_IMAGE,
-          permissions: user.permissions || DEFAULT_USER_PERMISSIONS,
-        },
-      });
-    } catch {
-      return null;
-    }
+    return await Prisma.create<User>("user", {
+      data: {
+        id: user.id,
+        secret: user.secret,
+        email: user.email,
+        password: user.password || generatedPassword,
+        name: user.name || config.user.name,
+        image: user.image || config.user.image,
+        permissions: user.permissions || config.user.permissions,
+      },
+    });
   };
 }
 

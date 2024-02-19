@@ -26,39 +26,34 @@ export const handler = NextAuth({
       },
 
       async authorize(credentials) {
-        const bearerSecret: string | undefined = process.env.BEARER_SECRET;
-        if (!bearerSecret) {
-          throw new Error("BEARER_SECRET is not defined");
-        }
-
-        if (!credentials || !credentials.email || !credentials.password) {
+        /**
+         * If the credentials are not provided, return null
+         */
+        if (!credentials) {
           return null;
         }
 
-        // Get the user from the database
-        const data = await trpc.getUserByEmail({
+        /**
+         * Get the user from the database
+         */
+        const data = await trpc.getUserByEmailUnsecure({
           email: credentials.email,
         });
 
-        const user = data?.user;
-        if (!user) {
-          return null;
-        }
-
         // Check the password
         const hashedProvidedPassword = await sha256(credentials.password);
-        if (hashedProvidedPassword !== user.password) {
+        if (hashedProvidedPassword !== data.user?.password) {
           return null;
         }
 
         // Return the user
         return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          image: user.image,
-          secret: user.secret,
-          permissions: user.permissions,
+          id: data.user.id,
+          name: data.user.name,
+          email: data.user.email,
+          image: data.user.image,
+          secret: data.user.secret,
+          permissions: data.user.permissions,
         };
       },
     }),
@@ -66,24 +61,24 @@ export const handler = NextAuth({
 
   callbacks: {
     async session({ session }) {
-      const bearerSecret: string | undefined = process.env.BEARER_SECRET;
-      if (!bearerSecret) {
-        throw new Error("BEARER_SECRET is not defined");
-      }
-
-      // If the user is already fetched from the database, return the session
+      /**
+       * If the user is already logged in, return the session
+       */
       if (session.user.id) {
         return session;
       }
 
-      // Get the user from the database
-      const data = await trpc.getUserByEmail({
+      /**
+       * Get the user from the database
+       */
+      const data = await trpc.getUserByEmailUnsecure({
         email: session.user.email,
       });
-      const user = data?.user;
 
-      if (!user) {
-        // Create the user
+      /**
+       * If the user does not exist, create the user
+       */
+      if (!data.user) {
         const time = getTimeForAuthorizationToken(0);
         const authToken = await generateAuthorizationToken(
           session.user.email,
@@ -92,9 +87,11 @@ export const handler = NextAuth({
 
         await trpc.createUser({
           token: authToken,
-          email: session.user.email,
-          name: session.user.name,
-          image: session.user.image,
+          user: {
+            email: session.user.email,
+            name: session.user.name,
+            image: session.user.image,
+          },
         });
 
         // Return the session
@@ -103,12 +100,12 @@ export const handler = NextAuth({
 
       // Set the session user id to the user's id
       session.user = {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        image: user.image,
-        secret: user.secret,
-        permissions: user.permissions,
+        id: data.user.id,
+        name: data.user.name,
+        email: data.user.email,
+        image: data.user.image,
+        secret: data.user.secret,
+        permissions: data.user.permissions,
       };
 
       return session;

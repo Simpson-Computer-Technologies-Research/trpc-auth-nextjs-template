@@ -1,5 +1,8 @@
 /**
- * SHA256 Encryption
+ * SHA256 Hashing
+ *
+ * @param text - Text to hash
+ * @returns The hashed text
  */
 export async function sha256(text: string): Promise<string> {
   const msgBuffer = new TextEncoder().encode(text);
@@ -10,6 +13,9 @@ export async function sha256(text: string): Promise<string> {
 
 /**
  * Base64 Encoding
+ *
+ * @param text - Text to encode
+ * @returns The encoded text
  */
 export function base64encode(text: string): string {
   const buff: number[] = [];
@@ -22,6 +28,9 @@ export function base64encode(text: string): string {
 
 /**
  * Base64 Decoding
+ *
+ * @param text - Text to decode
+ * @returns The decoded text
  */
 export function base64decode(text: string): string {
   const buff = atob(text);
@@ -31,12 +40,4 @@ export function base64decode(text: string): string {
   }
 
   return String.fromCharCode.apply(null, arr);
-}
-
-/**
- * Generate a random id using nanoseconds
- * @returns The random id
- */
-export async function genId(): Promise<string> {
-  return sha256(Math.random().toString() + ":" + Date.now());
 }

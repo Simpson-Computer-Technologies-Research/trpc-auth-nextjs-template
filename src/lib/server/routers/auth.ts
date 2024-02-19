@@ -1,108 +1,177 @@
-import { Response } from "@/lib/responses";
 import { publicProcedure } from "../trpc";
-import { zstring } from "../utils/zod";
 import { z } from "zod";
 import { Prisma } from "@/lib/prisma";
-import { verifyAuthorizationToken } from "@/lib/auth";
-import { genId, sha256 } from "@/lib/crypto";
-import {
-  DEFAULT_USER_IMAGE,
-  DEFAULT_USER_PERMISSIONS,
-  EMPTY_STRING,
-} from "@/lib/constants";
+import { generateUserSecret, verifyAuthorizationToken } from "@/lib/auth";
+import { sha256 } from "@/lib/crypto";
+import { v4 as uuidv4 } from "uuid";
+import config from "@/lib/config/default.config";
 
+/**
+ * The auth router
+ */
 export const authRouter = {
+  /**
+   * Verify an authorization token
+   *
+   * @param token - The token to verify
+   * @param email - The email to verify the token for
+   * @returns If the token is valid
+   */
   verifyToken: publicProcedure
     .input(
       z.object({
-        token: zstring(),
-        email: zstring(),
+        token: z.string(),
+        email: z.string(),
       }),
     )
     .mutation(async ({ input }) => {
-      // Check if the user already exists
+      /**
+       * Check if the user already exists
+       *
+       * If the user already exists, return an error
+       */
       const user = await Prisma.getUserByEmail(input.email);
       if (user) {
         return {
-          ...Response.InvalidQuery,
+          valid: false,
           message: "User already exists",
         };
       }
 
+      /**
+       * Verify the authorization token
+       */
       const res = await verifyAuthorizationToken(10, input.token, input.email);
-
       return res
-        ? { ...Response.Success, message: "Valid token" }
-        : { ...Response.InvalidQuery, message: "Invalid token" };
+        ? { valid: true, message: "Success" }
+        : { valid: false, message: "Invalid token" };
     }),
-  getUserByEmail: publicProcedure
-    .input(z.object({ email: zstring() }))
-    .query(async ({ input }) => {
-      const user = await Prisma.getUserByEmail(input.email);
 
+  /**
+   * Get whether a user exists
+   *
+   * @param email - The email to get whether the user exists for
+   * @returns If the user exists
+   */
+  userExists: publicProcedure
+    .input(z.object({ email: z.string() }))
+    .mutation(async ({ input }) => {
+      const exists = await Prisma.userExists(input.email);
+      return {
+        exists,
+      };
+    }),
+
+  /**
+   * Get a user by their email (unsecure)
+   *
+   * @param email - The email to get the user by
+   * @returns The user
+   */
+  getUserByEmailUnsecure: publicProcedure
+    .input(z.object({ email: z.string() }))
+    .mutation(async ({ input }) => {
+      /**
+       * Get the user by their email
+       */
+      const user = await Prisma.getUserByEmailUnsecure(input.email);
       if (!user) {
         return {
-          ...Response.InvalidQuery,
-          message: "User not found",
           user: null,
+          success: false,
+          message: "User not found",
         };
       }
 
-      return { ...Response.Success, user };
+      /**
+       * Return the user
+       */
+      return {
+        user,
+        success: true,
+        message: "Success",
+      };
     }),
+
+  /**
+   * Create a new user
+   *
+   * @param token - The token to verify the user with
+   * @param user - The user to create
+   * @returns The user
+   */
   createUser: publicProcedure
     .input(
       z.object({
-        token: zstring(),
-        email: zstring(),
-        password: zstring().optional(),
-        name: zstring().optional(),
-        image: zstring().optional(),
+        token: z.string(),
+        user: z.object({
+          email: z.string(),
+          password: z.string().optional(),
+          name: z.string().optional(),
+          image: z.string().optional(),
+        }),
       }),
     )
     .mutation(async ({ input }) => {
-      const res = await verifyAuthorizationToken(20, input.token, input.email);
-      if (!res) {
+      /**
+       * Verify the authorization token
+       */
+      const validToken = await verifyAuthorizationToken(
+        20,
+        input.token,
+        input.user.email,
+      );
+      if (!validToken) {
         return {
-          ...Response.InvalidQuery,
+          success: false,
           message: "Invalid token",
           user: null,
         };
       }
 
-      // Generate a new user secret
-      const bearerSecret = process.env.BEARER_SECRET;
-      if (!bearerSecret) {
-        return Response.InternalError;
+      /**
+       * Generate the user's secret
+       *
+       * Check if the user already exists by their secret
+       */
+      const secret = await generateUserSecret(input.user.email);
+      const user = await Prisma.getUserBySecret(secret);
+      if (user) {
+        return {
+          success: false,
+          message: "User already exists",
+          user: null,
+        };
       }
 
-      // Get the user's info
-      const secret: string = await sha256(input.email + bearerSecret);
-      let user = await Prisma.getUser(secret).catch(() => null);
+      /**
+       * Create the user in the database
+       */
+      const newUser = await Prisma.createUser({
+        secret,
+        id: uuidv4(),
+        email: input.user.email,
+        password: input.user.password,
+        permissions: config.user.permissions,
+        image: input.user.image ?? config.user.image,
+        name: input.user.name ?? config.user.name,
+      });
 
-      // If the user doesn't exist, create them
-      if (!user) {
-        const id: string = await genId();
-
-        user = await Prisma.createUser({
-          id,
-          secret,
-          image: input.image || DEFAULT_USER_IMAGE,
-          email: input.email,
-          password: input.password || EMPTY_STRING,
-          name: input.name || EMPTY_STRING,
-          permissions: DEFAULT_USER_PERMISSIONS,
-        });
-
-        if (!user) {
-          return {
-            ...Response.InternalError,
-            message: "Failed to create user",
-            user: null,
-          };
-        }
+      /**
+       * Return the user
+       */
+      if (!newUser) {
+        return {
+          success: false,
+          message: "Failed to create user",
+          user: null,
+        };
       }
 
-      return { ...Response.Success, user };
+      return {
+        success: true,
+        message: "Success",
+        user: newUser,
+      };
     }),
 };

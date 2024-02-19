@@ -1,14 +1,28 @@
 "use client";
 
-import Button from "@/components/Button";
+import Button from "@/components/buttons/Button";
 import ErrorMessage from "@/components/ErrorMessage";
-import { LoadingRelative } from "@/components/Loading";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 import MainWrapper from "@/components/MainWrapper";
 import SignInWithGoogleButton from "@/components/SignInWithGoogleButton";
-import { Status } from "@/types/types";
-import { SignInResponse, signIn } from "next-auth/react";
+import { signIn } from "next-auth/react";
 import { useEffect, useState } from "react";
 
+/**
+ * Status enum
+ */
+enum Status {
+  IDLE,
+  LOADING,
+  SUCCESS,
+  ERROR,
+}
+
+/**
+ * Sign in page component
+ *
+ * @returns JSX.Element
+ */
 export default function SignInPage() {
   // Get the callback url from the query parameters
   const [callbackUrl, setCallbackUrl] = useState("/");
@@ -77,7 +91,7 @@ export default function SignInPage() {
         />
         <Button type="submit">
           {status === Status.LOADING ? (
-            <LoadingRelative className="h-5 w-5 fill-white" />
+            <LoadingSpinner className="h-5 w-5 fill-white" />
           ) : (
             <p>Sign in with credentials</p>
           )}

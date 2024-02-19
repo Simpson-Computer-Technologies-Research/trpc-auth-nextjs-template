@@ -1,8 +1,7 @@
 "use client";
 
-import Button from "@/components/Button";
+import Button from "@/components/buttons/Button";
 import ErrorMessage from "@/components/ErrorMessage";
-import { LoadingRelative } from "@/components/Loading";
 import MainWrapper from "@/components/MainWrapper";
 import SuccessMessage from "@/components/SuccessMessage";
 import { base64decode, sha256 } from "@/lib/crypto";
@@ -10,13 +9,13 @@ import { trpc } from "@/lib/trpc/client";
 import { usePathname, useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 import { isValidPassword } from "./_utils/input";
-import {
-  MAX_NAME_LENGTH,
-  MAX_PASSWORD_LENGTH,
-  MIN_NAME_LENGTH,
-  MIN_PASSWORD_LENGTH,
-} from "@/lib/constants";
+import config from "@/lib/config/default.config";
+import LinkButton from "@/components/buttons/LinkButton";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 
+/**
+ * Auth status enum
+ */
 enum AuthStatus {
   IDLE,
   SUCCESS,
@@ -35,20 +34,19 @@ export default function SignUpPage() {
   const [name, setName] = useState("");
   const [status, setStatus] = useState(AuthStatus.INVALID_TOKEN);
 
-  // tRPC Query creating the user
+  // tRPC mutation creating the user
   const { mutateAsync: createUser } = trpc.createUser.useMutation();
+  // Verify the token and store the status depending on the result
+  const { mutateAsync: verifyToken } = trpc.verifyToken.useMutation();
 
   // Get the encoded data from the path and decode it
   const data = path.split("/").pop();
   const decodedData = base64decode(data || "");
   const { email, token } = JSON.parse(decodedData);
 
-  // Verify the token and store the status depending on the result
-  const { mutateAsync: verifyToken } = trpc.verifyToken.useMutation(); // TODO: FIX
-
   useEffect(() => {
     verifyToken({ email, token }).then((res) => {
-      res.success
+      res.valid
         ? setStatus(AuthStatus.IDLE)
         : setStatus(AuthStatus.INVALID_TOKEN);
     });
@@ -71,10 +69,12 @@ export default function SignUpPage() {
     // Send an api request to create the user's account
     const encryptedPassword = await sha256(password);
     const res = await createUser({
-      email,
       token,
-      password: encryptedPassword,
-      name,
+      user: {
+        email,
+        password: encryptedPassword,
+        name,
+      },
     });
 
     if (!res.success) {
@@ -95,7 +95,7 @@ export default function SignUpPage() {
         <p className="my-4 text-gray-400">
           The token provided is invalid or has expired.
         </p>
-        <Button href="/auth/signup">Sign up</Button>
+        <LinkButton href="/auth/signup">Sign up</LinkButton>
       </MainWrapper>
     );
   }
@@ -129,8 +129,8 @@ export default function SignUpPage() {
           required={true}
           placeholder="Password"
           value={password}
-          minLength={MIN_PASSWORD_LENGTH}
-          maxLength={MAX_PASSWORD_LENGTH}
+          minLength={config.min.password}
+          maxLength={config.max.password}
           onChange={(e) => setPassword(e.target.value)}
           className="rounded-md border p-3 text-sm"
         />
@@ -139,8 +139,8 @@ export default function SignUpPage() {
           value={verificationPassword}
           required={true}
           placeholder="Verify Password"
-          minLength={MIN_PASSWORD_LENGTH}
-          maxLength={MAX_PASSWORD_LENGTH}
+          minLength={config.min.password}
+          maxLength={config.max.password}
           onChange={(e) => setVerificationPassword(e.target.value)}
           className="rounded-md border p-3 text-sm"
         />
@@ -148,15 +148,15 @@ export default function SignUpPage() {
           type="text"
           required={true}
           placeholder="Full Name"
-          maxLength={MAX_NAME_LENGTH}
-          minLength={MIN_NAME_LENGTH}
+          maxLength={config.max.name}
+          minLength={config.min.name}
           onChange={(e) => setName(e.target.value)}
           className="rounded-md border p-3 text-sm"
         />
 
         <Button type="submit" disabled={disableSubmitButton}>
           {status === AuthStatus.LOADING ? (
-            <LoadingRelative className="h-5 w-5 fill-white" />
+            <LoadingSpinner className="h-5 w-5 fill-white" />
           ) : (
             "Sign up"
           )}
@@ -171,7 +171,7 @@ export default function SignUpPage() {
         {(password || verificationPassword) &&
           !isValidPassword(password, verificationPassword) && (
             <ErrorMessage>
-              Password must be at least {MIN_PASSWORD_LENGTH} characters long.
+              Password must be at least {config.min.password} characters long.
             </ErrorMessage>
           )}
 

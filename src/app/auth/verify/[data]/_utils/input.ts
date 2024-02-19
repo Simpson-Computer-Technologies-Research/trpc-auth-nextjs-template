@@ -1,4 +1,4 @@
-import { MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH } from "@/lib/constants";
+import config from "@/lib/config/default.config";
 
 /**
  * Check whether the password is valid
@@ -11,8 +11,8 @@ export function isValidPassword(
   verificationPassword: string,
 ) {
   if (
-    password.length < MIN_PASSWORD_LENGTH ||
-    password.length > MAX_PASSWORD_LENGTH
+    password.length < config.min.password ||
+    password.length > config.max.password
   ) {
     return false;
   }
